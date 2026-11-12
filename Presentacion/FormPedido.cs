@@ -265,7 +265,27 @@ public partial class FormPedido : Form
         }
     }
 
-    // ========================================================================== MÉTODOS CRUD CON DATAGRID
+    // ===========================# 1. Verificar qué remotos tienes configurados
+git remote -v
+
+# 2. Si no ves nada, configurar el remoto
+git remote add origin https://github.com/sintesisLabEstudio/pizzeriaBellIataliaBD-Lab.git
+
+# 3. Verificar que se agregó correctamente
+git remote -v
+
+# 4. Ahora hacer push a master
+git push -u origin master# 1. Verificar qué remotos tienes configurados
+git remote -v
+
+# 2. Si no ves nada, configurar el remoto
+git remote add origin https://github.com/sintesisLabEstudio/pizzeriaBellIataliaBD-Lab.git
+
+# 3. Verificar que se agregó correctamente
+git remote -v
+
+# 4. Ahora hacer push a master
+git push -u origin master=============================================== MÉTODOS CRUD CON DATAGRID
     private void CargarDataGridPedidos()
     {
         try
