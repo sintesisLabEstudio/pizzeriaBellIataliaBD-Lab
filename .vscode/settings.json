@@ -1,0 +1,25 @@
+﻿{
+  "mssql.connections": [
+    {
+      "server": "(localdb)\\MSSQLLocalDB",
+      "database": "pizzeriaBD",
+      "authenticationType": "Integrated",
+      "profileName": "pizzeriaBD (LocalDB)",
+      "encrypt": "Mandatory",
+      "trustServerCertificate": true,
+      "connectTimeout": 30,
+      "commandTimeout": 30
+    }
+  ],
+  "sqltools.connections": [
+    {
+      "name": "pizzeriaBD (LocalDB)",
+      "driver": "MSSQL",
+      "server": "(localdb)\\MSSQLLocalDB",
+      "database": "pizzeriaBD",
+      "authenticationType": "Integrated",
+      "encrypt": false,
+      "trustServerCertificate": true
+    }
+  ]
+}

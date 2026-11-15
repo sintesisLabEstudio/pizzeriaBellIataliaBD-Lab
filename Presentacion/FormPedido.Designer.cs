@@ -1,15 +1,14 @@
-﻿namespace PizzeriaBellaItalia.Presentacion;
-    partial class FormPedido : Form
+namespace PizzeriaBellaItalia.Presentacion
 {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
+    // Clase parcial generada/definida para la construcción visual del formulario.
+    // Aquí se crean, configuran y posicionan los controles (UI). La lógica de eventos
+    // y el flujo de negocio/CRUD se implementan en FormPedido.cs.
+    partial class FormPedido
+    {
+        // Contenedor de componentes para liberar recursos administrados cuando corresponda.
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        ///  Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        // Libera recursos del formulario y de sus componentes.
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -19,548 +18,286 @@
             base.Dispose(disposing);
         }
 
-    #region Windows Form Designer generated code
+        // Construye la interfaz gráfica:
+        // 1) Instancia controles.
+        // 2) Configura propiedades (texto, tamaño, posición, eventos).
+        // 3) Compone la jerarquía visual (controles dentro de grupos/formulario).
+        private void InitializeComponent()
+        {
+            // --- Instanciación de controles ---
+            // Grupo de configuración de una pizza (tamaño, masa, ingredientes, cantidad).
+            grpConfigPizza = new GroupBox();
+            lblPizza = new Label();
+            lblTamano = new Label();
+            cboTamano = new ComboBox();
+            lblMasa = new Label();
+            cboMasa = new ComboBox();
+            lblIngredientes = new Label();
+            chkQuesoExtra = new CheckBox();
+            chkPepperoni = new CheckBox();
+            chkChampinones = new CheckBox();
+            chkAceitunas = new CheckBox();
+            chkTocino = new CheckBox();
+            lblCant = new Label();
+            numCantidad = new NumericUpDown();
+            btnAgregar = new Button();
 
-    /// <summary>
-    ///  Required method for Designer support - do not modify
-    ///  the contents of this method with the code editor.
-    /// </summary>
-    private void InitializeComponent()
-    {
-        grpCliente = new GroupBox();
-        txtTelefono = new TextBox();
-        txtCliente = new TextBox();
-        lblTelefono = new Label();
-        lblNombre = new Label();
-        grpPizza = new GroupBox();
-        cboMasa = new ComboBox();
-        lblMasa = new Label();
-        cboTamano = new ComboBox();
-        lblTamano = new Label();
-        grpIngredientes = new GroupBox();
-        chkTocino = new CheckBox();
-        chkPepperoni = new CheckBox();
-        chkAceitunas = new CheckBox();
-        chkChampinones = new CheckBox();
-        chkQuesoExtra = new CheckBox();
-        grpEntrega = new GroupBox();
-        chkConvenioEstudiante = new CheckBox();
-        rdbDelivery = new RadioButton();
-        rdbRetiro = new RadioButton();
-        lblSubtotalValor = new Label();
-        lblIvaValor = new Label();
-        lblTotalValor = new Label();
-        lblDeliveryValor = new Label();
-        lblDescuentoValor = new Label();
-        grpResumen = new GroupBox();
-        lblDescuentoNombre = new Label();
-        lblDeliveryNombre = new Label();
-        lblIvaNombre = new Label();
-        lblTotalNombre = new Label();
-        lblSubtotalNombre = new Label();
-        btnCalcular = new Button();
-        btnLimpiar = new Button();
-        btnConfirmar = new Button();
-        dgvPedidos = new DataGridView();
-        btnEditar = new Button();
-        btnEliminar = new Button();
-        btnGrabar = new Button();
-        grpCliente.SuspendLayout();
-        grpPizza.SuspendLayout();
-        grpIngredientes.SuspendLayout();
-        grpEntrega.SuspendLayout();
-        grpResumen.SuspendLayout();
-        ((System.ComponentModel.ISupportInitialize)dgvPedidos).BeginInit();
-        SuspendLayout();
-        // 
-        // grpCliente
-        // 
-        grpCliente.Controls.Add(txtTelefono);
-        grpCliente.Controls.Add(txtCliente);
-        grpCliente.Controls.Add(lblTelefono);
-        grpCliente.Controls.Add(lblNombre);
-        grpCliente.Location = new Point(19, 33);
-        grpCliente.Margin = new Padding(3, 2, 3, 2);
-        grpCliente.Name = "grpCliente";
-        grpCliente.Padding = new Padding(3, 2, 3, 2);
-        grpCliente.Size = new Size(321, 83);
-        grpCliente.TabIndex = 0;
-        grpCliente.TabStop = false;
-        grpCliente.Text = "Datos del Cliente";
-        // 
-        // txtTelefono
-        // 
-        txtTelefono.Location = new Point(195, 40);
-        txtTelefono.Margin = new Padding(3, 2, 3, 2);
-        txtTelefono.Name = "txtTelefono";
-        txtTelefono.Size = new Size(110, 23);
-        txtTelefono.TabIndex = 3;
-        // 
-        // txtCliente
-        // 
-        txtCliente.Location = new Point(22, 39);
-        txtCliente.Margin = new Padding(3, 2, 3, 2);
-        txtCliente.Name = "txtCliente";
-        txtCliente.Size = new Size(167, 23);
-        txtCliente.TabIndex = 2;
-        // 
-        // lblTelefono
-        // 
-        lblTelefono.AutoSize = true;
-        lblTelefono.Location = new Point(196, 20);
-        lblTelefono.Name = "lblTelefono";
-        lblTelefono.Size = new Size(55, 15);
-        lblTelefono.TabIndex = 1;
-        lblTelefono.Text = "Telefono:";
-        // 
-        // lblNombre
-        // 
-        lblNombre.AutoSize = true;
-        lblNombre.Location = new Point(22, 20);
-        lblNombre.Name = "lblNombre";
-        lblNombre.Size = new Size(54, 15);
-        lblNombre.TabIndex = 0;
-        lblNombre.Text = "Nombre:";
-        // 
-        // grpPizza
-        // 
-        grpPizza.Controls.Add(cboMasa);
-        grpPizza.Controls.Add(lblMasa);
-        grpPizza.Controls.Add(cboTamano);
-        grpPizza.Controls.Add(lblTamano);
-        grpPizza.Location = new Point(19, 136);
-        grpPizza.Margin = new Padding(3, 2, 3, 2);
-        grpPizza.Name = "grpPizza";
-        grpPizza.Padding = new Padding(3, 2, 3, 2);
-        grpPizza.Size = new Size(321, 94);
-        grpPizza.TabIndex = 1;
-        grpPizza.TabStop = false;
-        grpPizza.Text = "Tamaño y Masa:";
-        // 
-        // cboMasa
-        // 
-        cboMasa.FormattingEnabled = true;
-        cboMasa.Location = new Point(71, 54);
-        cboMasa.Margin = new Padding(3, 2, 3, 2);
-        cboMasa.Name = "cboMasa";
-        cboMasa.Size = new Size(234, 23);
-        cboMasa.TabIndex = 4;
-        // 
-        // lblMasa
-        // 
-        lblMasa.AutoSize = true;
-        lblMasa.Location = new Point(5, 57);
-        lblMasa.Name = "lblMasa";
-        lblMasa.Size = new Size(38, 15);
-        lblMasa.TabIndex = 3;
-        lblMasa.Text = "Masa:";
-        // 
-        // cboTamano
-        // 
-        cboTamano.FormattingEnabled = true;
-        cboTamano.Location = new Point(71, 28);
-        cboTamano.Margin = new Padding(3, 2, 3, 2);
-        cboTamano.Name = "cboTamano";
-        cboTamano.Size = new Size(234, 23);
-        cboTamano.TabIndex = 2;
-        // 
-        // lblTamano
-        // 
-        lblTamano.AutoSize = true;
-        lblTamano.Location = new Point(5, 31);
-        lblTamano.Name = "lblTamano";
-        lblTamano.Size = new Size(52, 15);
-        lblTamano.TabIndex = 1;
-        lblTamano.Text = "Tamaño:";
-        // 
-        // grpIngredientes
-        // 
-        grpIngredientes.Controls.Add(chkTocino);
-        grpIngredientes.Controls.Add(chkPepperoni);
-        grpIngredientes.Controls.Add(chkAceitunas);
-        grpIngredientes.Controls.Add(chkChampinones);
-        grpIngredientes.Controls.Add(chkQuesoExtra);
-        grpIngredientes.Location = new Point(346, 33);
-        grpIngredientes.Margin = new Padding(3, 2, 3, 2);
-        grpIngredientes.Name = "grpIngredientes";
-        grpIngredientes.Padding = new Padding(3, 2, 3, 2);
-        grpIngredientes.Size = new Size(282, 135);
-        grpIngredientes.TabIndex = 3;
-        grpIngredientes.TabStop = false;
-        grpIngredientes.Text = "Adicionales ($800 c/u)";
-        // 
-        // chkTocino
-        // 
-        chkTocino.AutoSize = true;
-        chkTocino.Location = new Point(9, 112);
-        chkTocino.Margin = new Padding(3, 2, 3, 2);
-        chkTocino.Name = "chkTocino";
-        chkTocino.Size = new Size(61, 19);
-        chkTocino.TabIndex = 5;
-        chkTocino.Text = "Tocino";
-        chkTocino.UseVisualStyleBackColor = true;
-        // 
-        // chkPepperoni
-        // 
-        chkPepperoni.AutoSize = true;
-        chkPepperoni.Location = new Point(9, 44);
-        chkPepperoni.Margin = new Padding(3, 2, 3, 2);
-        chkPepperoni.Name = "chkPepperoni";
-        chkPepperoni.Size = new Size(80, 19);
-        chkPepperoni.TabIndex = 4;
-        chkPepperoni.Text = "Pepperoni";
-        chkPepperoni.UseVisualStyleBackColor = true;
-        // 
-        // chkAceitunas
-        // 
-        chkAceitunas.AutoSize = true;
-        chkAceitunas.Location = new Point(9, 89);
-        chkAceitunas.Margin = new Padding(3, 2, 3, 2);
-        chkAceitunas.Name = "chkAceitunas";
-        chkAceitunas.Size = new Size(78, 19);
-        chkAceitunas.TabIndex = 2;
-        chkAceitunas.Text = "Aceitunas";
-        chkAceitunas.UseVisualStyleBackColor = true;
-        // 
-        // chkChampinones
-        // 
-        chkChampinones.AutoSize = true;
-        chkChampinones.Location = new Point(9, 67);
-        chkChampinones.Margin = new Padding(3, 2, 3, 2);
-        chkChampinones.Name = "chkChampinones";
-        chkChampinones.Size = new Size(100, 19);
-        chkChampinones.TabIndex = 1;
-        chkChampinones.Text = "Champiñones";
-        chkChampinones.UseVisualStyleBackColor = true;
-        // 
-        // chkQuesoExtra
-        // 
-        chkQuesoExtra.AutoSize = true;
-        chkQuesoExtra.Location = new Point(9, 22);
-        chkQuesoExtra.Margin = new Padding(3, 2, 3, 2);
-        chkQuesoExtra.Name = "chkQuesoExtra";
-        chkQuesoExtra.Size = new Size(89, 19);
-        chkQuesoExtra.TabIndex = 0;
-        chkQuesoExtra.Text = "Queso Extra";
-        chkQuesoExtra.UseVisualStyleBackColor = true;
-        // 
-        // grpEntrega
-        // 
-        grpEntrega.Controls.Add(chkConvenioEstudiante);
-        grpEntrega.Controls.Add(rdbDelivery);
-        grpEntrega.Controls.Add(rdbRetiro);
-        grpEntrega.Location = new Point(346, 194);
-        grpEntrega.Margin = new Padding(3, 2, 3, 2);
-        grpEntrega.Name = "grpEntrega";
-        grpEntrega.Padding = new Padding(3, 2, 3, 2);
-        grpEntrega.Size = new Size(282, 82);
-        grpEntrega.TabIndex = 4;
-        grpEntrega.TabStop = false;
-        grpEntrega.Text = "Servicio y Descuento";
-        // 
-        // chkConvenioEstudiante
-        // 
-        chkConvenioEstudiante.AutoSize = true;
-        chkConvenioEstudiante.Location = new Point(15, 52);
-        chkConvenioEstudiante.Margin = new Padding(3, 2, 3, 2);
-        chkConvenioEstudiante.Name = "chkConvenioEstudiante";
-        chkConvenioEstudiante.Size = new Size(226, 19);
-        chkConvenioEstudiante.TabIndex = 2;
-        chkConvenioEstudiante.Text = "Convenio Estudiante/IPVG (10% Dcto)";
-        chkConvenioEstudiante.UseVisualStyleBackColor = true;
-        // 
-        // rdbDelivery
-        // 
-        rdbDelivery.AutoSize = true;
-        rdbDelivery.Location = new Point(145, 29);
-        rdbDelivery.Margin = new Padding(3, 2, 3, 2);
-        rdbDelivery.Name = "rdbDelivery";
-        rdbDelivery.Size = new Size(119, 19);
-        rdbDelivery.TabIndex = 1;
-        rdbDelivery.Text = "Delivery ($2.000.-)";
-        rdbDelivery.UseVisualStyleBackColor = true;
-        // 
-        // rdbRetiro
-        // 
-        rdbRetiro.AutoSize = true;
-        rdbRetiro.Checked = true;
-        rdbRetiro.Location = new Point(15, 29);
-        rdbRetiro.Margin = new Padding(3, 2, 3, 2);
-        rdbRetiro.Name = "rdbRetiro";
-        rdbRetiro.Size = new Size(103, 19);
-        rdbRetiro.TabIndex = 0;
-        rdbRetiro.TabStop = true;
-        rdbRetiro.Text = "Retiro en Local";
-        rdbRetiro.UseVisualStyleBackColor = true;
-        // 
-        // lblSubtotalValor
-        // 
-        lblSubtotalValor.AutoSize = true;
-        lblSubtotalValor.Location = new Point(223, 26);
-        lblSubtotalValor.Name = "lblSubtotalValor";
-        lblSubtotalValor.Size = new Size(43, 15);
-        lblSubtotalValor.TabIndex = 5;
-        lblSubtotalValor.Text = "$0 CLP";
-        // 
-        // lblIvaValor
-        // 
-        lblIvaValor.AutoSize = true;
-        lblIvaValor.Location = new Point(222, 93);
-        lblIvaValor.Name = "lblIvaValor";
-        lblIvaValor.Size = new Size(43, 15);
-        lblIvaValor.TabIndex = 6;
-        lblIvaValor.Text = "$0 CLP";
-        // 
-        // lblTotalValor
-        // 
-        lblTotalValor.AutoSize = true;
-        lblTotalValor.Location = new Point(221, 122);
-        lblTotalValor.Name = "lblTotalValor";
-        lblTotalValor.Size = new Size(43, 15);
-        lblTotalValor.TabIndex = 7;
-        lblTotalValor.Text = "$0 CLP";
-        // 
-        // lblDeliveryValor
-        // 
-        lblDeliveryValor.AutoSize = true;
-        lblDeliveryValor.Location = new Point(223, 71);
-        lblDeliveryValor.Name = "lblDeliveryValor";
-        lblDeliveryValor.Size = new Size(43, 15);
-        lblDeliveryValor.TabIndex = 8;
-        lblDeliveryValor.Text = "$0 CLP";
-        // 
-        // lblDescuentoValor
-        // 
-        lblDescuentoValor.AutoSize = true;
-        lblDescuentoValor.Location = new Point(223, 47);
-        lblDescuentoValor.Name = "lblDescuentoValor";
-        lblDescuentoValor.Size = new Size(43, 15);
-        lblDescuentoValor.TabIndex = 9;
-        lblDescuentoValor.Text = "$0 CLP";
-        // 
-        // grpResumen
-        // 
-        grpResumen.Controls.Add(lblDescuentoNombre);
-        grpResumen.Controls.Add(lblDeliveryNombre);
-        grpResumen.Controls.Add(lblIvaNombre);
-        grpResumen.Controls.Add(lblTotalNombre);
-        grpResumen.Controls.Add(lblSubtotalNombre);
-        grpResumen.Controls.Add(lblSubtotalValor);
-        grpResumen.Controls.Add(lblDescuentoValor);
-        grpResumen.Controls.Add(lblIvaValor);
-        grpResumen.Controls.Add(lblDeliveryValor);
-        grpResumen.Controls.Add(lblTotalValor);
-        grpResumen.Location = new Point(19, 292);
-        grpResumen.Margin = new Padding(3, 2, 3, 2);
-        grpResumen.Name = "grpResumen";
-        grpResumen.Padding = new Padding(3, 2, 3, 2);
-        grpResumen.Size = new Size(321, 156);
-        grpResumen.TabIndex = 10;
-        grpResumen.TabStop = false;
-        grpResumen.Text = "Detalle de Pago";
-        // 
-        // lblDescuentoNombre
-        // 
-        lblDescuentoNombre.AutoSize = true;
-        lblDescuentoNombre.Location = new Point(10, 47);
-        lblDescuentoNombre.Name = "lblDescuentoNombre";
-        lblDescuentoNombre.Size = new Size(99, 15);
-        lblDescuentoNombre.TabIndex = 15;
-        lblDescuentoNombre.Text = "Descuento (10%):";
-        // 
-        // lblDeliveryNombre
-        // 
-        lblDeliveryNombre.AutoSize = true;
-        lblDeliveryNombre.Location = new Point(10, 71);
-        lblDeliveryNombre.Name = "lblDeliveryNombre";
-        lblDeliveryNombre.Size = new Size(98, 15);
-        lblDeliveryNombre.TabIndex = 14;
-        lblDeliveryNombre.Text = "Recargo Delivery:";
-        // 
-        // lblIvaNombre
-        // 
-        lblIvaNombre.AutoSize = true;
-        lblIvaNombre.Location = new Point(10, 93);
-        lblIvaNombre.Name = "lblIvaNombre";
-        lblIvaNombre.Size = new Size(101, 15);
-        lblIvaNombre.TabIndex = 13;
-        lblIvaNombre.Text = "IVA Chileno (19%)";
-        // 
-        // lblTotalNombre
-        // 
-        lblTotalNombre.AutoSize = true;
-        lblTotalNombre.Location = new Point(10, 122);
-        lblTotalNombre.Name = "lblTotalNombre";
-        lblTotalNombre.Size = new Size(93, 15);
-        lblTotalNombre.TabIndex = 12;
-        lblTotalNombre.Text = "TOTAL A PAGAR:";
-        // 
-        // lblSubtotalNombre
-        // 
-        lblSubtotalNombre.AutoSize = true;
-        lblSubtotalNombre.Location = new Point(10, 26);
-        lblSubtotalNombre.Name = "lblSubtotalNombre";
-        lblSubtotalNombre.Size = new Size(83, 15);
-        lblSubtotalNombre.TabIndex = 10;
-        lblSubtotalNombre.Text = "Subtotal Pizza:";
-        // 
-        // btnCalcular
-        // 
-        btnCalcular.Location = new Point(396, 311);
-        btnCalcular.Margin = new Padding(3, 2, 3, 2);
-        btnCalcular.Name = "btnCalcular";
-        btnCalcular.Size = new Size(161, 22);
-        btnCalcular.TabIndex = 11;
-        btnCalcular.Text = "Calcular Total";
-        btnCalcular.UseVisualStyleBackColor = true;
-        btnCalcular.Click += BtnCalcular_Click;
-        // 
-        // btnLimpiar
-        // 
-        btnLimpiar.Location = new Point(396, 356);
-        btnLimpiar.Margin = new Padding(3, 2, 3, 2);
-        btnLimpiar.Name = "btnLimpiar";
-        btnLimpiar.Size = new Size(161, 22);
-        btnLimpiar.TabIndex = 12;
-        btnLimpiar.Text = "Nuevo Pedido";
-        btnLimpiar.UseVisualStyleBackColor = true;
-        btnLimpiar.Click += BtnLimpiar_Click;
-        // 
-        // btnConfirmar
-        // 
-        btnConfirmar.Location = new Point(396, 382);
-        btnConfirmar.Margin = new Padding(3, 2, 3, 2);
-        btnConfirmar.Name = "btnConfirmar";
-        btnConfirmar.Size = new Size(161, 22);
-        btnConfirmar.TabIndex = 13;
-        btnConfirmar.Text = "Salir";
-        btnConfirmar.UseVisualStyleBackColor = true;
-        btnConfirmar.Click += BtnSalir_Click;
-        // 
-        // dgvPedidos
-        // 
-        dgvPedidos.AllowUserToAddRows = false;
-        dgvPedidos.AllowUserToDeleteRows = false;
-        dgvPedidos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-        dgvPedidos.Location = new Point(25, 453);
-        dgvPedidos.Name = "dgvPedidos";
-        dgvPedidos.ReadOnly = true;
-        dgvPedidos.RowHeadersWidth = 51;
-        dgvPedidos.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        dgvPedidos.Size = new Size(603, 150);
-        dgvPedidos.TabIndex = 15;
-        dgvPedidos.CellClick += DgvPedidos_CellClick;
-        // 
-        // btnEditar
-        // 
-        btnEditar.BackColor = Color.DodgerBlue;
-        btnEditar.ForeColor = Color.White;
-        btnEditar.Location = new Point(128, 615);
-        btnEditar.Name = "btnEditar";
-        btnEditar.Size = new Size(80, 30);
-        btnEditar.TabIndex = 16;
-        btnEditar.Text = "Editar";
-        btnEditar.UseVisualStyleBackColor = false;
-        btnEditar.Click += BtnEditar_Click;
-        // 
-        // btnEliminar
-        // 
-        btnEliminar.BackColor = Color.Orange;
-        btnEliminar.ForeColor = Color.White;
-        btnEliminar.Location = new Point(411, 615);
-        btnEliminar.Name = "btnEliminar";
-        btnEliminar.Size = new Size(80, 30);
-        btnEliminar.TabIndex = 17;
-        btnEliminar.Text = "Eliminar";
-        btnEliminar.UseVisualStyleBackColor = false;
-        btnEliminar.Click += BtnEliminar_Click;
-        // 
-        // btnGrabar
-        // 
-        btnGrabar.BackColor = Color.LimeGreen;
-        btnGrabar.ForeColor = Color.White;
-        btnGrabar.Location = new Point(274, 615);
-        btnGrabar.Name = "btnGrabar";
-        btnGrabar.Size = new Size(80, 30);
-        btnGrabar.TabIndex = 18;
-        btnGrabar.Text = "Grabar";
-        btnGrabar.UseVisualStyleBackColor = false;
-        btnGrabar.Click += BtnGrabar_Click;
-        // 
-        // FormPedido
-        // 
-        AutoScaleDimensions = new SizeF(7F, 15F);
-        AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(653, 657);
-        Controls.Add(btnGrabar);
-        Controls.Add(btnEliminar);
-        Controls.Add(btnEditar);
-        Controls.Add(dgvPedidos);
-        Controls.Add(btnConfirmar);
-        Controls.Add(btnLimpiar);
-        Controls.Add(btnCalcular);
-        Controls.Add(grpResumen);
-        Controls.Add(grpEntrega);
-        Controls.Add(grpIngredientes);
-        Controls.Add(grpPizza);
-        Controls.Add(grpCliente);
-        Margin = new Padding(3, 2, 3, 2);
-        Name = "FormPedido";
-        StartPosition = FormStartPosition.CenterScreen;
-        Text = "Sistema de Pedidos - Pizzería Bella Italia (v1.0)";
-        Load += FormPedido_Load;
-        grpCliente.ResumeLayout(false);
-        grpCliente.PerformLayout();
-        grpPizza.ResumeLayout(false);
-        grpPizza.PerformLayout();
-        grpIngredientes.ResumeLayout(false);
-        grpIngredientes.PerformLayout();
-        grpEntrega.ResumeLayout(false);
-        grpEntrega.PerformLayout();
-        grpResumen.ResumeLayout(false);
-        grpResumen.PerformLayout();
-        ((System.ComponentModel.ISupportInitialize)dgvPedidos).EndInit();
-        ResumeLayout(false);
-    }
+            // Grupo de datos del cliente/pedido y totales generales.
+            grpDatosCliente = new GroupBox();
+            lblCliente = new Label();
+            txtCliente = new TextBox();
+            lblTelefono = new Label();
+            txtTelefono = new TextBox();
+            lblFecha = new Label();
+            dtpFecha = new DateTimePicker();
+            lblHora = new Label();
+            dtpHora = new DateTimePicker();
+            chkDelivery = new CheckBox();
+            chkDescuento = new CheckBox();
 
-    #endregion
+            lblST = new Label();
+            lblSubtotalValor = new Label();
+            lblIVA = new Label();
+            lblIvaValor = new Label();
+            lblTot = new Label();
+            lblTotalValor = new Label();
 
-    private GroupBox grpCliente;
-        private TextBox txtTelefono;
+            // Sección de detalle del pedido en edición y listado de pedidos guardados.
+            lblDetalleTitulo = new Label();
+            dgvDetalleItem = new DataGridView();
+            btnQuitar = new Button();
+            lblPedidosTitulo = new Label();
+            dgvPedidos = new DataGridView();
+
+            // Botones de acciones CRUD / navegación.
+            btnGuardar = new Button();
+            btnEliminar = new Button();
+            btnLimpiar = new Button();
+            btnSalir = new Button();
+
+            // Suspende layout para aplicar cambios de forma eficiente antes del render final.
+            grpConfigPizza.SuspendLayout();
+            grpDatosCliente.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numCantidad).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvDetalleItem).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvPedidos).BeginInit();
+            SuspendLayout();
+
+            // --- Grupo: configuración de pizza ---
+            // Contiene controles para definir la línea que se agregará al detalle.
+            grpConfigPizza.Controls.Add(lblPizza);
+            grpConfigPizza.Controls.Add(lblTamano);
+            grpConfigPizza.Controls.Add(cboTamano);
+            grpConfigPizza.Controls.Add(lblMasa);
+            grpConfigPizza.Controls.Add(cboMasa);
+            grpConfigPizza.Controls.Add(lblIngredientes);
+            grpConfigPizza.Controls.Add(chkQuesoExtra);
+            grpConfigPizza.Controls.Add(chkPepperoni);
+            grpConfigPizza.Controls.Add(chkChampinones);
+            grpConfigPizza.Controls.Add(chkAceitunas);
+            grpConfigPizza.Controls.Add(chkTocino);
+            grpConfigPizza.Controls.Add(lblCant);
+            grpConfigPizza.Controls.Add(numCantidad);
+            grpConfigPizza.Controls.Add(btnAgregar);
+            grpConfigPizza.Location = new Point(12, 12);
+            grpConfigPizza.Name = "grpConfigPizza";
+            grpConfigPizza.Size = new Size(310, 205);
+            grpConfigPizza.TabIndex = 0;
+            grpConfigPizza.TabStop = false;
+            grpConfigPizza.Text = "Configurar pizza";
+
+            lblPizza.AutoSize = true; lblPizza.Location = new Point(15, 25); lblPizza.Text = "Pizza:";
+            lblTamano.AutoSize = true; lblTamano.Location = new Point(15, 52); lblTamano.Text = "Tamaño:";
+            cboTamano.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboTamano.Location = new Point(70, 48); cboTamano.Size = new Size(110, 23);
+
+            lblMasa.AutoSize = true; lblMasa.Location = new Point(185, 52); lblMasa.Text = "Masa:";
+            cboMasa.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboMasa.Location = new Point(225, 48); cboMasa.Size = new Size(75, 23);
+
+            lblIngredientes.AutoSize = true; lblIngredientes.Location = new Point(15, 82); lblIngredientes.Text = "Ingredientes (+$800 c/u):";
+            chkQuesoExtra.AutoSize = true; chkQuesoExtra.Location = new Point(15, 105); chkQuesoExtra.Text = "Queso Extra";
+            chkPepperoni.AutoSize = true; chkPepperoni.Location = new Point(110, 105); chkPepperoni.Text = "Pepperoni";
+            chkChampinones.AutoSize = true; chkChampinones.Location = new Point(15, 128); chkChampinones.Text = "Champiñones";
+            chkAceitunas.AutoSize = true; chkAceitunas.Location = new Point(110, 128); chkAceitunas.Text = "Aceitunas";
+            chkTocino.AutoSize = true; chkTocino.Location = new Point(200, 105); chkTocino.Text = "Tocino";
+
+            lblCant.AutoSize = true; lblCant.Location = new Point(200, 130); lblCant.Text = "Cant:";
+            numCantidad.Location = new Point(240, 126); numCantidad.Size = new Size(60, 23);
+            numCantidad.Minimum = 1; numCantidad.Maximum = 50; numCantidad.Value = 1;
+
+            // Evento: agrega el ítem configurado al pedido en memoria (lógica en FormPedido.cs).
+            btnAgregar.Location = new Point(15, 162); btnAgregar.Size = new Size(285, 30);
+            btnAgregar.Text = "Agregar al pedido";
+            btnAgregar.Click += btnAgregar_Click;
+
+            // --- Grupo: datos del cliente y totales del pedido ---
+            // Captura cliente/fecha/opciones generales y muestra subtotal, IVA y total.
+            grpDatosCliente.Controls.Add(lblCliente);
+            grpDatosCliente.Controls.Add(txtCliente);
+            grpDatosCliente.Controls.Add(lblTelefono);
+            grpDatosCliente.Controls.Add(txtTelefono);
+            grpDatosCliente.Controls.Add(lblFecha);
+            grpDatosCliente.Controls.Add(dtpFecha);
+            grpDatosCliente.Controls.Add(lblHora);
+            grpDatosCliente.Controls.Add(dtpHora);
+            grpDatosCliente.Controls.Add(chkDelivery);
+            grpDatosCliente.Controls.Add(chkDescuento);
+            grpDatosCliente.Controls.Add(lblST);
+            grpDatosCliente.Controls.Add(lblSubtotalValor);
+            grpDatosCliente.Controls.Add(lblIVA);
+            grpDatosCliente.Controls.Add(lblIvaValor);
+            grpDatosCliente.Controls.Add(lblTot);
+            grpDatosCliente.Controls.Add(lblTotalValor);
+            grpDatosCliente.Location = new Point(334, 12);
+            grpDatosCliente.Name = "grpDatosCliente";
+            grpDatosCliente.Size = new Size(310, 205);
+            grpDatosCliente.TabIndex = 1;
+            grpDatosCliente.TabStop = false;
+            grpDatosCliente.Text = "Pedido & Cliente";
+
+            lblCliente.AutoSize = true; lblCliente.Location = new Point(15, 22); lblCliente.Text = "Cliente:";
+            txtCliente.Location = new Point(70, 18); txtCliente.Size = new Size(225, 23);
+
+            lblTelefono.AutoSize = true; lblTelefono.Location = new Point(15, 49); lblTelefono.Text = "Teléfono:";
+            txtTelefono.Location = new Point(70, 45); txtTelefono.Size = new Size(225, 23);
+
+            lblFecha.AutoSize = true; lblFecha.Location = new Point(15, 76); lblFecha.Text = "Fecha:";
+            dtpFecha.Format = DateTimePickerFormat.Short; dtpFecha.Location = new Point(60, 72); dtpFecha.Size = new Size(100, 23);
+
+            lblHora.AutoSize = true; lblHora.Location = new Point(170, 76); lblHora.Text = "Hora:";
+            dtpHora.Format = DateTimePickerFormat.Time; dtpHora.ShowUpDown = true;
+            dtpHora.Location = new Point(210, 72); dtpHora.Size = new Size(85, 23);
+
+            chkDelivery.AutoSize = true; chkDelivery.Location = new Point(15, 102); chkDelivery.Text = "Delivery (+$2.000)";
+            chkDelivery.CheckedChanged += chkOpcion_CheckedChanged;
+            chkDescuento.AutoSize = true; chkDescuento.Location = new Point(155, 102); chkDescuento.Text = "Descuento (10%)";
+            chkDescuento.CheckedChanged += chkOpcion_CheckedChanged;
+
+            // Etiquetas de totales calculados por el modelo/flujo de Recalcular().
+            lblST.AutoSize = true; lblST.Location = new Point(15, 128); lblST.Text = "Subtotal";
+            lblSubtotalValor.BorderStyle = BorderStyle.Fixed3D; lblSubtotalValor.Location = new Point(15, 146); lblSubtotalValor.Size = new Size(85, 23); lblSubtotalValor.Text = "$ 0";
+
+            lblIVA.AutoSize = true; lblIVA.Location = new Point(112, 128); lblIVA.Text = "IVA";
+            lblIvaValor.BorderStyle = BorderStyle.Fixed3D; lblIvaValor.Location = new Point(112, 146); lblIvaValor.Size = new Size(85, 23); lblIvaValor.Text = "$ 0";
+
+            lblTot.AutoSize = true; lblTot.Location = new Point(210, 128); lblTot.Text = "Total";
+            lblTotalValor.BorderStyle = BorderStyle.Fixed3D; lblTotalValor.Location = new Point(210, 146); lblTotalValor.Size = new Size(85, 23); lblTotalValor.Text = "$ 0";
+
+            // --- Detalle del pedido actual (en memoria) ---
+            lblDetalleTitulo.AutoSize = true;
+            lblDetalleTitulo.Location = new Point(12, 224);
+            lblDetalleTitulo.Text = "Detalle del pedido actual (clic en una línea para verla en el formulario):";
+
+            dgvDetalleItem.Location = new Point(12, 244);
+            dgvDetalleItem.Size = new Size(632, 140);
+            dgvDetalleItem.Name = "dgvDetalleItem";
+            dgvDetalleItem.CellClick += dgvDetalleItem_CellClick;
+
+            btnQuitar.Location = new Point(12, 390); btnQuitar.Size = new Size(200, 26);
+            btnQuitar.Text = "Quitar ítem seleccionado";
+            btnQuitar.Click += btnQuitar_Click;
+
+            // --- Pedidos guardados en base de datos ---
+            lblPedidosTitulo.AutoSize = true;
+            lblPedidosTitulo.Location = new Point(12, 424);
+            lblPedidosTitulo.Text = "Pedidos guardados:";
+
+            dgvPedidos.Location = new Point(12, 444);
+            dgvPedidos.Size = new Size(510, 120);
+            dgvPedidos.Name = "dgvPedidos";
+            dgvPedidos.CellClick += dgvPedidos_CellClick;
+
+            // --- Botones de acciones principales ---
+            btnGuardar.Location = new Point(530, 444); btnGuardar.Size = new Size(114, 28); btnGuardar.Text = "Guardar pedido";
+            btnGuardar.Click += btnGuardar_Click;
+
+            btnEliminar.Location = new Point(530, 478); btnEliminar.Size = new Size(114, 28); btnEliminar.Text = "Eliminar pedido";
+            btnEliminar.Click += btnEliminar_Click;
+
+            btnLimpiar.Location = new Point(530, 512); btnLimpiar.Size = new Size(55, 28); btnLimpiar.Text = "Nuevo";
+            btnLimpiar.Click += btnLimpiar_Click;
+
+            btnSalir.Location = new Point(589, 512); btnSalir.Size = new Size(55, 28); btnSalir.Text = "Salir";
+            btnSalir.Click += btnSalir_Click;
+
+            // --- Configuración del formulario principal ---
+            // Agrega todos los controles y suscribe el evento Load que inicia el flujo de la app.
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(656, 578);
+            Controls.Add(grpConfigPizza);
+            Controls.Add(grpDatosCliente);
+            Controls.Add(lblDetalleTitulo);
+            Controls.Add(dgvDetalleItem);
+            Controls.Add(btnQuitar);
+            Controls.Add(lblPedidosTitulo);
+            Controls.Add(dgvPedidos);
+            Controls.Add(btnGuardar);
+            Controls.Add(btnEliminar);
+            Controls.Add(btnLimpiar);
+            Controls.Add(btnSalir);
+            Name = "FormPedido";
+            Text = "Pizzería Bella Italia — Gestión de Pedidos";
+            Load += FormPedido_Load;
+
+            // Reanuda layout y aplica ajustes finales.
+            grpConfigPizza.ResumeLayout(false);
+            grpConfigPizza.PerformLayout();
+            grpDatosCliente.ResumeLayout(false);
+            grpDatosCliente.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numCantidad).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvDetalleItem).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvPedidos).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        // --- Declaración de campos de controles (referencias usadas por la lógica del formulario) ---
+        private GroupBox grpConfigPizza;
+        private Label lblPizza;
+        private Label lblTamano;
+        private ComboBox cboTamano;
+        private Label lblMasa;
+        private ComboBox cboMasa;
+        private Label lblIngredientes;
+        private CheckBox chkQuesoExtra;
+        private CheckBox chkPepperoni;
+        private CheckBox chkChampinones;
+        private CheckBox chkAceitunas;
+        private CheckBox chkTocino;
+        private Label lblCant;
+        private NumericUpDown numCantidad;
+        private Button btnAgregar;
+
+        private GroupBox grpDatosCliente;
+        private Label lblCliente;
         private TextBox txtCliente;
         private Label lblTelefono;
-        private Label lblNombre;
-        private GroupBox grpPizza;
-        private Label lblTamano;
-        private ComboBox cboMasa;
-        private Label lblMasa;
-        private ComboBox cboTamano;
-        private GroupBox grpIngredientes;
-        private CheckBox chkTocino;
-        private CheckBox chkPepperoni;
-        private CheckBox chkAceitunas;
-        private CheckBox chkChampinones;
-        private CheckBox chkQuesoExtra;
-        private GroupBox grpEntrega;
-        private RadioButton rdbDelivery;
-        private RadioButton rdbRetiro;
-        private CheckBox chkConvenioEstudiante;
+        private TextBox txtTelefono;
+        private Label lblFecha;
+        private DateTimePicker dtpFecha;
+        private Label lblHora;
+        private DateTimePicker dtpHora;
+        private CheckBox chkDelivery;
+        private CheckBox chkDescuento;
+
+        private Label lblST;
         private Label lblSubtotalValor;
+        private Label lblIVA;
         private Label lblIvaValor;
+        private Label lblTot;
         private Label lblTotalValor;
-        private Label lblDeliveryValor;
-        private Label lblDescuentoValor;
-        private GroupBox grpResumen;
-        private Label lblDescuentoNombre;
-        private Label lblDeliveryNombre;
-        private Label lblIvaNombre;
-        private Label lblTotalNombre;
-        private Label lblSubtotalNombre;
-        private Button btnCalcular;
-        private Button btnLimpiar;
-        private Button btnConfirmar;
+
+        private Label lblDetalleTitulo;
+        private DataGridView dgvDetalleItem;
+        private Button btnQuitar;
+        private Label lblPedidosTitulo;
         private DataGridView dgvPedidos;
-        private Button btnEditar;
+
+        private Button btnGuardar;
         private Button btnEliminar;
-        private Button btnGrabar;
+        private Button btnLimpiar;
+        private Button btnSalir;
+    }
 }

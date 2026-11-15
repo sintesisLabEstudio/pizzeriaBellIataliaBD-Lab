@@ -1,53 +1,69 @@
-using System;
-using System.Data.SqlClient;
+using System.Text.Json;
+using Microsoft.Data.SqlClient;
 
 namespace PizzeriaBellaItalia.Dominio;
 
-/// <summary>
-/// Clase estática para gestionar la conexión con la base de datos pizzeriaBD.mdf
-/// Patrón Singleton: garantiza una única instancia de conexión
-/// </summary>
+// Clase utilitaria responsable de construir y entregar conexiones a SQL Server.
+// Centraliza la configuración para que el resto del código (DAO, inicialización, etc.) no dependa
+// de una cadena de conexión hardcodeada.
 public static class ConexionBD
 {
-    // Cadena de conexión a SQL Server LocalDB (sin archivo MDF adjunto)
-    // La base de datos PizzeriaDB se creará automáticamente si no existe
-    private static readonly string _cadenaConexion =
-        @"Server=(LocalDB)\MSSQLLocalDB;Database=PizzeriaDB;Integrated Security=True;Connect Timeout=30;Encrypt=False";
+    // Cadena por defecto (fallback) usada solo si no hay configuración externa válida.
+    // Apunta a LocalDB y a la base "pizzeriaBD" para facilitar ejecución en entornos de desarrollo.
+    private const string DefaultConnectionString =
+        "Server=(localdb)\\MSSQLLocalDB;Database=pizzeriaBD;Integrated Security=True;TrustServerCertificate=True;Connect Timeout=30;";
 
-    /// <summary>
-    /// Obtiene una nueva conexión abierta a SQL Server
-    /// </summary>
-    /// <returns>SqlConnection abierta y lista para usar</returns>
-    public static SqlConnection ObtenerConexion()
+    // Resuelve la cadena de conexión con la siguiente prioridad:
+    // 1) Variable de entorno PIZZERIA_CONNECTION_STRING
+    // 2) appsettings.json (ConnectionStrings:PizzeriaBD) junto al ejecutable
+    // 3) Valor por defecto
+    public static string ObtenerCadenaConexion()
     {
+        // 1) Permite configurar el entorno sin modificar archivos (útil en despliegues/CI).
+        var fromEnv = Environment.GetEnvironmentVariable("PIZZERIA_CONNECTION_STRING");
+        if (!string.IsNullOrWhiteSpace(fromEnv))
+            return fromEnv;
+
         try
         {
-            SqlConnection conexion = new SqlConnection(_cadenaConexion);
-            conexion.Open();
-            return conexion;
-        }
-        catch (SqlException ex)
-        {
-            throw new Exception($"Error al conectar con la base de datos: {ex.Message}", ex);
-        }
-    }
-
-    /// <summary>
-    /// Verifica si la conexión con la base de datos está disponible
-    /// </summary>
-    /// <returns>true si la conexión es exitosa, false en caso contrario</returns>
-    public static bool VerificarConexion()
-    {
-        try
-        {
-            using (SqlConnection conexion = ObtenerConexion())
+            // 2) Intenta leer configuración desde appsettings.json copiado al directorio de salida.
+            var baseDir = AppContext.BaseDirectory;
+            var path = Path.Combine(baseDir, "appsettings.json");
+            if (File.Exists(path))
             {
-                return conexion.State == System.Data.ConnectionState.Open;
+                using var stream = File.OpenRead(path);
+                using var doc = JsonDocument.Parse(stream);
+
+                // Navega el JSON: { "ConnectionStrings": { "PizzeriaBD": "..." } }
+                if (doc.RootElement.TryGetProperty("ConnectionStrings", out var cs) &&
+                    cs.TryGetProperty("PizzeriaBD", out var value) &&
+                    value.ValueKind == JsonValueKind.String)
+                {
+                    var s = value.GetString();
+                    if (!string.IsNullOrWhiteSpace(s))
+                        return s;
+                }
             }
         }
         catch
         {
-            return false;
+            // Si falla la lectura/parsing del archivo, se continúa con el valor por defecto
+            // para no bloquear la app por un error de configuración no crítico.
         }
+
+        // 3) Fallback seguro para desarrollo local.
+        return DefaultConnectionString;
+    }
+
+    // Crea el objeto SqlConnection (aún sin abrir). Útil cuando el llamador controla el ciclo de vida.
+    public static SqlConnection CrearConexion() => new(ObtenerCadenaConexion());
+
+    // Crea y abre una conexión lista para usar.
+    // Importante: el llamador debe disponerla (using) para liberar recursos y cerrar la conexión.
+    public static SqlConnection ObtenerConexion()
+    {
+        var conexion = CrearConexion();
+        conexion.Open();
+        return conexion;
     }
 }

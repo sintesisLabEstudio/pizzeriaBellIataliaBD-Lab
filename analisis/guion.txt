@@ -4,7 +4,7 @@ GUIATE EN BASE A LA GUIA QUE TE ADJUNTE
 HAY QUE AGREGAR idPedido A LA TABLA PEDIDOS DEBE SER UNICO Y AUTOINCREMENTABLE.
 ESTE ARCHIVO pizzeriaBD.mdf DEBE ESTAR EN LA RUTA C:\desarrollo\Csoft\pizzeriaBellIataliaBD-Lab\BDpizzeria.
 TE ADJUNTE EL ARCHIVO DE LA CREACION DE ESTA TABLA PARA MEJORAR.
-3-en el fromulario agrega botones para el crud 
+3-en el formulario agrega botones para el crud 
 btnEditar en azul
 btnEliminar en naranjo
 btnGrabar en verde

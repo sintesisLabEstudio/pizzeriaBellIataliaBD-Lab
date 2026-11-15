@@ -1,517 +1,467 @@
-// NOTA: Se cambió de Microsoft.Data.SqlClient a System.Data.SqlClient
-// porque System.Data.SqlClient es el estándar en .NET 10 para Windows Forms
-// Si prefieres Microsoft.Data.SqlClient, instala el paquete NuGet:
-// Install-Package Microsoft.Data.SqlClient
-using System.Data.SqlClient;  // ✅ CORRECTO PARA .NET 10
-using PizzeriaBellaItalia.Dominio;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
 using System.Globalization;
 using System.Windows.Forms;
+using PizzeriaBellaItalia.Dominio;
 
-namespace PizzeriaBellaItalia.Presentacion;
-
-public partial class FormPedido : Form
+namespace PizzeriaBellaItalia.Presentacion
 {
-    private readonly GestionPedidos gesPed = new();
-
-    public FormPedido()
+    // Formulario principal de la aplicación (capa de presentación).
+    // Responsabilidades principales:
+    // - Capturar datos del cliente y configuración de pizzas.
+    // - Mantener el detalle del pedido en memoria (BindingList<ItemPedido>).
+    // - Calcular y mostrar totales.
+    // - Invocar al DAO para persistir/consultar pedidos en la base de datos.
+    public partial class FormPedido : Form
     {
-        InitializeComponent();
-    }
+        // Id del pedido actualmente cargado para edición; null indica "nuevo pedido".
+        private int? idPedidoSeleccionado = null;
 
-    private void FormPedido_Load(object sender, EventArgs e)
-    {
-        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        // Objeto de acceso a datos (CRUD) para la entidad Pedido y sus detalles.
+        private readonly PedidoDAO pedidoDao = new PedidoDAO();
 
-        // Inicializar la base de datos
-        InitDatabase.Inicializar();
+        // Lista enlazable de ítems del pedido actual. Al modificarla y refrescar bindings,
+        // la grilla de detalle se actualiza automáticamente.
+        private readonly BindingList<ItemPedido> items = new BindingList<ItemPedido>();
 
-        PoblarComboBoxesConDiccionarios();
-        LimpiarFormulario();
-
-        // Cargar DataGrid con pedidos existentes
-        CargarDataGridPedidos();
-    }
-
-    // -------------------------------------------------------------------- BOTÓNES
-    private void BtnCalcular_Click(object sender, EventArgs e)
-    {
-        if (!ValidaInputs()) return;
-
-        PedidoPizza pedido = new()
+        public FormPedido()
         {
-            Cliente = txtCliente.Text.Trim(),
-            Telefono = txtTelefono.Text.Trim(),
-            TamanoNombre = cboTamano.Text,
-            PrecioBaseTamano = Convert.ToInt32(cboTamano.SelectedValue),
-            MasaNombre = cboMasa.Text,
-            RecargoMasa = Convert.ToInt32(cboMasa.SelectedValue),
-            QuesoExtra = chkQuesoExtra.Checked,
-            Pepperoni = chkPepperoni.Checked,
-            Champinones = chkChampinones.Checked,
-            Aceitunas = chkAceitunas.Checked,
-            Tocino = chkTocino.Checked,
-            EsDelivery = rdbDelivery.Checked,
-            AplicaConvenioEstudiante = chkConvenioEstudiante.Checked
-        };
+            // Inicializa los controles definidos en FormPedido.Designer.cs.
+            InitializeComponent();
+        }
 
-        lblSubtotalValor.Text = $"$ {pedido.CalcularSubtotalPizza():N0} CLP";
-        lblDescuentoValor.Text = $"- $ {pedido.CalcularMontoDescuento():N0} CLP";
-        lblDeliveryValor.Text = $"+ $ {pedido.CalcularCostoDelivery():N0} CLP";
-        lblIvaValor.Text = $"+ $ {pedido.CalcularMontoIva():N0} CLP";
-        lblTotalValor.Text = $"$ {pedido.CalcularTotalPagar():N0} CLP";
-
-        gesPed.AgregarPedido(pedido);
-
-        grpResumen.Enabled = true;
-
-        //CONSULTA GRABAR EN BD 
-        // Se usa Button1 (primer botón = Yes), Button2 (No), Button3 (Cancel)
-        DialogResult resultado = MessageBox.Show(
-            $"¿Grabar pedido?\n\nTotal: ${pedido.CalcularTotalPagar():N0} CLP",
-            "Confirmar",
-            MessageBoxButtons.YesNoCancel,
-            MessageBoxIcon.Question,
-            MessageBoxDefaultButton.Button1  // ✅ Button1 = Yes (primer botón)
-        );
-
-        if (resultado == DialogResult.Yes)
+        // Evento Load: se ejecuta al abrir el formulario.
+        // Flujo: configurar cultura/controles -> configurar grillas -> inicializar BD -> cargar pedidos guardados.
+        private void FormPedido_Load(object? sender, EventArgs e)
         {
-            // Captura el resultado de la grabación y muestra el mensaje correspondiente
-            bool grabado = GrabarRegistroPedido(pedido);
-            // si graba ok
-            if (grabado)
+            // Define formato regional para moneda/números mostrados en la UI.
+            CultureInfo.CurrentCulture = new CultureInfo("es-CL");
+
+            // Carga opciones de tamaño con precios base visibles para el usuario.
+            cboTamano.Items.Clear();
+            cboTamano.Items.Add("Personal ($5.000)");
+            cboTamano.Items.Add("Mediana ($8.500)");
+            cboTamano.Items.Add("Familiar ($12.000)");
+            cboTamano.SelectedIndex = 1;
+
+            // Carga opciones de masa (incluye recargo en borde de queso).
+            cboMasa.Items.Clear();
+            cboMasa.Items.Add("Tradicional");
+            cboMasa.Items.Add("Delgada");
+            cboMasa.Items.Add("Borde de Queso (+$1.500)");
+            cboMasa.SelectedIndex = 0;
+
+            // Inicializa fecha y hora del pedido con el momento actual.
+            dtpFecha.Value = DateTime.Now;
+            dtpHora.Value = DateTime.Now;
+
+            // Configura comportamiento visual/funcional de grillas y enlaza el detalle a la lista en memoria.
+            ConfigurarGrilla(dgvDetalleItem);
+            ConfigurarGrilla(dgvPedidos);
+            dgvDetalleItem.DataSource = items;
+            FormatearGrillaDetalle();
+
+            // Calcula totales iniciales (pedido vacío).
+            Recalcular();
+
+            // Intenta preparar la base de datos y cargar pedidos existentes.
+            // Si falla, la app sigue abierta pero informa el problema al usuario.
+            try
             {
-                // ✅ ÉXITO - Se grabó correctamente
+                InitDatabase.Inicializar();
+                CargarGrillaPedidos();
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show(
-                    "✅ Pedido guardado exitosamente en la base de datos",
-                    "Grabación Exitosa",
+                    "No se pudo inicializar o conectar a la base de datos.\n\n" +
+                    ex.Message + "\n\n" +
+                    "Revise appsettings.json o la variable de entorno PIZZERIA_CONNECTION_STRING.",
+                    "Base de datos",
                     MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-
-                // Opcional: Limpiar el formulario después de grabar
-                LimpiarFormulario();
-            }
-            // Si no grabó, el error ya se muestra en la función GrabarRegistroPedido()
-        }
-        else if (resultado == DialogResult.No)
-        {
-            MessageBox.Show("Pedido no guardado", "Cancelado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        else if (resultado == DialogResult.Cancel)
-        {
-            LimpiarFormulario();
-        }
-    }
-
-    private void BtnLimpiar_Click(object sender, EventArgs e)
-    {
-        LimpiarFormulario();
-    }
-
-    private void BtnSalir_Click(object sender, EventArgs e)
-    {
-        DialogResult respuesta = MessageBox.Show(
-            "¿Está seguro de que desea salir del sistema?",
-            "Confirmar Salida",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question
-        );
-
-        if (respuesta == DialogResult.Yes)
-        {
-            this.Close();
-        }
-    }
-
-    // -------------------------------------------------------------------- MÉTODOS AUXILIARES
-    private void PoblarComboBoxesConDiccionarios()
-    {
-        //crea diccionario opcionesTamano
-        Dictionary<string, int> opcionesTamano = new()
-        {
-            { "Seleccione uno", -1 },
-            { "Personal (1 Persona)", 5000 },
-            { "Mediana (2 a 3 Personas)", 8500 },
-            { "Familiar (4 a 5 Personas)", 12000 }
-        };
-        //asigna al combo un binding enlace al diccionario
-        cboTamano.DataSource = new BindingSource { DataSource = opcionesTamano };
-        cboTamano.DisplayMember = "Key";
-        cboTamano.ValueMember = "Value";
-        cboTamano.DropDownStyle = ComboBoxStyle.DropDownList;
-        //crea diccionario opcionesMasa
-        Dictionary<string, int> opcionesMasa = new()
-        {
-            { "Seleccione uno", -1 },
-            { "Masa Tradicional (Sin Recargo)", 0 },
-            { "Masa Delgada (Sin Recargo)", 0 },
-            { "Borde de Queso (+$1.500)", 1500 }
-        };
-        //asigna al combo un binding enlace al diccionario
-        cboMasa.DataSource = new BindingSource { DataSource = opcionesMasa };
-        cboMasa.DisplayMember = "Key";
-        cboMasa.ValueMember = "Value";
-        cboMasa.DropDownStyle = ComboBoxStyle.DropDownList;
-    }
-
-    private bool ValidaInputs()
-    {
-        if (string.IsNullOrWhiteSpace(txtCliente.Text))
-        {
-            MessageBox.Show(
-                "Por favor, ingrese el nombre del cliente antes de calcular.",
-                "Validación de Datos",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
-            txtCliente.Focus();
-            return false;
-        }
-
-        if (cboTamano.SelectedValue == null || Convert.ToInt32(cboTamano.SelectedValue) == -1 ||
-            cboMasa.SelectedValue == null || Convert.ToInt32(cboMasa.SelectedValue) == -1)
-        {
-            MessageBox.Show(
-                "Por favor, seleccione un tamaño y un tipo de masa válidos.",
-                "Validación de Datos",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
-            return false;
-        }
-        return true;
-    }
-
-    private void LimpiarFormulario()
-    {
-        txtCliente.Clear();
-        txtTelefono.Clear();
-
-        if (cboTamano.Items.Count > 0) cboTamano.SelectedIndex = 0;
-        if (cboMasa.Items.Count > 0) cboMasa.SelectedIndex = 0;
-
-        chkQuesoExtra.Checked = false;
-        chkPepperoni.Checked = false;
-        chkChampinones.Checked = false;
-        chkAceitunas.Checked = false;
-        chkTocino.Checked = false;
-
-        rdbRetiro.Checked = true;
-        chkConvenioEstudiante.Checked = false;
-
-        lblSubtotalValor.Text = "$ 0 CLP";
-        lblDescuentoValor.Text = "$ 0 CLP";
-        lblDeliveryValor.Text = "$ 0 CLP";
-        lblIvaValor.Text = "$ 0 CLP";
-        lblTotalValor.Text = "$ 0 CLP";
-
-        grpResumen.Enabled = false;
-
-        txtCliente.Focus();
-    }
-
-    //graba en la BD
-    public bool GrabarRegistroPedido(PedidoPizza pedido)
-    {
-        try
-        {
-            // Conexión a BD local - Usa MSSQLLocalDB (servidor de desarrollo local)
-            // Server=(localdb)\MSSQLLocalDB es la instancia local de SQL Express
-            using (SqlConnection conexion = new("Server=(localdb)\\MSSQLLocalDB;Database=PizzeriaDB;Integrated Security=True;"))
-            {
-                conexion.Open();
-
-                using (SqlCommand comando = new(
-                    "INSERT INTO Pedidos (Cliente, Telefono, TamanoNombre, PrecioBaseTamano, MasaNombre, RecargoMasa, " +
-                    "QuesoExtra, Pepperoni, Champinones, Aceitunas, Tocino, EsDelivery, AplicaConvenioEstudiante, " +
-                    "CostoIngredientes, SubtotalPizza, MontoDescuento, CostoDelivery, NetoAfecto, MontoIva, TotalPagar) " +
-                    "VALUES (@Cliente, @Telefono, @TamanoNombre, @PrecioBaseTamano, @MasaNombre, @RecargoMasa, " +
-                    "@QuesoExtra, @Pepperoni, @Champinones, @Aceitunas, @Tocino, @EsDelivery, @AplicaConvenioEstudiante, " +
-                    "@CostoIngredientes, @SubtotalPizza, @MontoDescuento, @CostoDelivery, @NetoAfecto, @MontoIva, @TotalPagar)",
-                    conexion))
-                {
-                    comando.Parameters.AddWithValue("@Cliente", pedido.Cliente);
-                    comando.Parameters.AddWithValue("@Telefono", pedido.Telefono);
-                    comando.Parameters.AddWithValue("@TamanoNombre", pedido.TamanoNombre);
-                    comando.Parameters.AddWithValue("@PrecioBaseTamano", pedido.PrecioBaseTamano);
-                    comando.Parameters.AddWithValue("@MasaNombre", pedido.MasaNombre);
-                    comando.Parameters.AddWithValue("@RecargoMasa", pedido.RecargoMasa);
-                    comando.Parameters.AddWithValue("@QuesoExtra", pedido.QuesoExtra);
-                    comando.Parameters.AddWithValue("@Pepperoni", pedido.Pepperoni);
-                    comando.Parameters.AddWithValue("@Champinones", pedido.Champinones);
-                    comando.Parameters.AddWithValue("@Aceitunas", pedido.Aceitunas);
-                    comando.Parameters.AddWithValue("@Tocino", pedido.Tocino);
-                    comando.Parameters.AddWithValue("@EsDelivery", pedido.EsDelivery);
-                    comando.Parameters.AddWithValue("@AplicaConvenioEstudiante", pedido.AplicaConvenioEstudiante);
-                    comando.Parameters.AddWithValue("@CostoIngredientes", pedido.CalcularCostoIngredientes());
-                    comando.Parameters.AddWithValue("@SubtotalPizza", pedido.CalcularSubtotalPizza());
-                    comando.Parameters.AddWithValue("@MontoDescuento", pedido.CalcularMontoDescuento());
-                    comando.Parameters.AddWithValue("@CostoDelivery", pedido.CalcularCostoDelivery());
-                    comando.Parameters.AddWithValue("@NetoAfecto", pedido.CalcularNetoAfecto());
-                    comando.Parameters.AddWithValue("@MontoIva", pedido.CalcularMontoIva());
-                    comando.Parameters.AddWithValue("@TotalPagar", pedido.CalcularTotalPagar());
-
-                    int filasAfectadas = comando.ExecuteNonQuery();
-                    return filasAfectadas > 0;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error: {ex.Message}");
-            return false;
-        }
-    }
-
-    // ===========================# 1. Verificar qué remotos tienes configurados
-git remote -v
-
-# 2. Si no ves nada, configurar el remoto
-git remote add origin https://github.com/sintesisLabEstudio/pizzeriaBellIataliaBD-Lab.git
-
-# 3. Verificar que se agregó correctamente
-git remote -v
-
-# 4. Ahora hacer push a master
-git push -u origin master# 1. Verificar qué remotos tienes configurados
-git remote -v
-
-# 2. Si no ves nada, configurar el remoto
-git remote add origin https://github.com/sintesisLabEstudio/pizzeriaBellIataliaBD-Lab.git
-
-# 3. Verificar que se agregó correctamente
-git remote -v
-
-# 4. Ahora hacer push a master
-git push -u origin master=============================================== MÉTODOS CRUD CON DATAGRID
-    private void CargarDataGridPedidos()
-    {
-        try
-        {
-            PedidoDAO dao = new PedidoDAO();
-            System.Data.DataTable dt = dao.ObtenerPedidosDataTable();
-            dgvPedidos.DataSource = dt;
-
-            // Ajustar ancho de columnas
-            if (dgvPedidos.Columns.Count > 0)
-            {
-                dgvPedidos.Columns["IdPedido"].Width = 60;
-                dgvPedidos.Columns["Cliente"].Width = 120;
-                dgvPedidos.Columns["TotalPagar"].Width = 90;
-                dgvPedidos.Columns["FechaCreacion"].Width = 140;
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error al cargar pedidos: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    /// Evento al seleccionar una fila del DataGrid
-    private void DgvPedidos_CellClick(object sender, DataGridViewCellEventArgs e)
-    {
-        if (e.RowIndex < 0) return;
-
-        try
-        {
-            int idPedido = Convert.ToInt32(dgvPedidos.Rows[e.RowIndex].Cells["IdPedido"].Value);
-
-            // Cargar el pedido en el formulario para edición
-            PedidoDAO dao = new PedidoDAO();
-            PedidoPizza pedido = dao.ObtenerPedidoPorId(idPedido);
-
-            if (pedido != null)
-            {
-                CargarPedidoEnFormulario(pedido);
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error al seleccionar pedido: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    /// Carga los datos de un pedido en los controles del formulario
-    private void CargarPedidoEnFormulario(PedidoPizza pedido)
-    {
-        txtCliente.Text = pedido.Cliente;
-        txtTelefono.Text = pedido.Telefono;
-
-        // Seleccionar en los combos
-        foreach (var item in cboTamano.Items)
-        {
-            var kvp = (KeyValuePair<string, int>)item;
-            if (kvp.Key == pedido.TamanoNombre)
-            {
-                cboTamano.SelectedItem = item;
-                break;
+                    MessageBoxIcon.Warning);
             }
         }
 
-        foreach (var item in cboMasa.Items)
+        // ---------- Configuración de grillas ----------
+        // Aplica una configuración estándar de solo lectura/selección a un DataGridView.
+        private static void ConfigurarGrilla(DataGridView dgv)
         {
-            var kvp = (KeyValuePair<string, int>)item;
-            if (kvp.Key == pedido.MasaNombre)
+            dgv.ReadOnly = true;
+            dgv.AllowUserToAddRows = false;
+            dgv.AllowUserToDeleteRows = false;
+            dgv.MultiSelect = false;
+            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgv.RowHeadersVisible = false;
+        }
+
+        // Ajusta encabezados, pesos y formatos de columnas de la grilla de detalle
+        // según las propiedades expuestas por ItemPedido.
+        private void FormatearGrillaDetalle()
+        {
+            if (dgvDetalleItem.Columns.Count == 0) return;
+
+            // Helper local para configurar una columna si existe.
+            void Col(string nombre, string? titulo, float peso, string? formato = null)
             {
-                cboMasa.SelectedItem = item;
-                break;
+                if (!dgvDetalleItem.Columns.Contains(nombre)) return;
+                var c = dgvDetalleItem.Columns[nombre];
+                if (titulo != null) c.HeaderText = titulo;
+                c.FillWeight = peso;
+                if (formato != null) c.DefaultCellStyle.Format = formato;
+            }
+
+            Col("Cantidad", "Cant.", 8);
+            Col("Resumen", null, 38);
+            Col("PrecioUnitario", "Precio unit.", 11, "N0");
+            Col("Subtotal", "Subtotal", 11, "N0");
+            Col("Descuento", "Descuento", 11, "N0");
+            Col("Iva", "I.V.A.", 10, "N0");
+            Col("Delivery", "Delivery", 9);
+            Col("TotalLinea", "Total línea", 12, "N0");
+        }
+
+        // Consulta los pedidos persistidos y los muestra en la grilla inferior.
+        private void CargarGrillaPedidos()
+        {
+            try
+            {
+                dgvPedidos.DataSource = pedidoDao.ObtenerPedidosDataTable();
+                if (dgvPedidos.Columns.Contains("Total"))
+                    dgvPedidos.Columns["Total"].DefaultCellStyle.Format = "N0";
+                if (dgvPedidos.Columns.Contains("Fecha"))
+                    dgvPedidos.Columns["Fecha"].DefaultCellStyle.Format = "g";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar la grilla de pedidos: " + ex.Message, "Aviso",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-        // Cargar checkboxes
-        chkQuesoExtra.Checked = pedido.QuesoExtra;
-        chkPepperoni.Checked = pedido.Pepperoni;
-        chkChampinones.Checked = pedido.Champinones;
-        chkAceitunas.Checked = pedido.Aceitunas;
-        chkTocino.Checked = pedido.Tocino;
-
-        // Cargar opciones de entrega
-        if (pedido.EsDelivery)
-            rdbDelivery.Checked = true;
-        else
-            rdbRetiro.Checked = true;
-
-        chkConvenioEstudiante.Checked = pedido.AplicaConvenioEstudiante;
-
-        // Guardar el ID en una propiedad temporal (agregar al final de la clase)
-        formularioPedidoActualId = pedido.IdPedido;
-
-        // Mostrar los totales
-        lblSubtotalValor.Text = $"$ {pedido.CalcularSubtotalPizza():N0} CLP";
-        lblDescuentoValor.Text = $"- $ {pedido.CalcularMontoDescuento():N0} CLP";
-        lblDeliveryValor.Text = $"+ $ {pedido.CalcularCostoDelivery():N0} CLP";
-        lblIvaValor.Text = $"+ $ {pedido.CalcularMontoIva():N0} CLP";
-        lblTotalValor.Text = $"$ {pedido.CalcularTotalPagar():N0} CLP";
-
-        grpResumen.Enabled = true;
-    }
-
-    /// Evento del botón Editar
-    private void BtnEditar_Click(object sender, EventArgs e)
-    {
-        if (dgvPedidos.SelectedRows.Count == 0)
+        // ---------- Armado del pedido ----------
+        // Construye un ItemPedido a partir de los controles de configuración de pizza.
+        // Traduce textos de combos a valores de dominio usados en cálculos/persistencia.
+        private ItemPedido ConstruirItemDesdeFormulario()
         {
-            MessageBox.Show("Seleccione un pedido de la tabla para editar", "Advertencia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
+            string tamanoTexto = cboTamano.SelectedItem?.ToString() ?? "Mediana";
+            string tamano = tamanoTexto.Contains("Personal") ? "Personal"
+                          : tamanoTexto.Contains("Familiar") ? "Familiar" : "Mediana";
 
-        MessageBox.Show("Puede editar los datos del pedido seleccionado y luego hacer clic en Grabar para guardar los cambios.", "Modo Edición", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
+            string masaTexto = cboMasa.SelectedItem?.ToString() ?? "Tradicional";
+            string masa = masaTexto.Contains("Delgada") ? "Delgada"
+                        : masaTexto.Contains("Borde") ? "Borde de Queso" : "Tradicional";
 
-    /// <summary>
-    /// Evento del botón Eliminar
-    /// </summary>
-    private void BtnEliminar_Click(object sender, EventArgs e)
-    {
-        if (dgvPedidos.SelectedRows.Count == 0)
-        {
-            MessageBox.Show("Seleccione un pedido de la tabla para eliminar", "Advertencia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        try
-        {
-            int idPedido = Convert.ToInt32(dgvPedidos.SelectedRows[0].Cells["IdPedido"].Value);
-            string cliente = dgvPedidos.SelectedRows[0].Cells["Cliente"].Value.ToString();
-
-            DialogResult confirmacion = MessageBox.Show(
-                $"¿Está seguro de que desea eliminar el pedido de {cliente}?",
-                "Confirmar Eliminación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question
-            );
-
-            if (confirmacion == DialogResult.Yes)
+            return new ItemPedido
             {
-                PedidoDAO dao = new PedidoDAO();
-                if (dao.EliminarPedido(idPedido))
-                {
-                    MessageBox.Show("Pedido eliminado exitosamente", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    CargarDataGridPedidos();
-                    LimpiarFormulario();
-                    formularioPedidoActualId = 0;
-                }
-                else
-                {
-                    MessageBox.Show("No se pudo eliminar el pedido", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error al eliminar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    /// <summary>
-    /// Evento del botón Grabar (guardar cambios o nuevo)
-    /// </summary>
-    private void BtnGrabar_Click(object sender, EventArgs e)
-    {
-        if (!ValidaInputs()) return;
-
-        try
-        {
-            // Crear objeto pedido con datos del formulario
-            PedidoPizza pedido = new()
-            {
-                IdPedido = formularioPedidoActualId,
-                Cliente = txtCliente.Text.Trim(),
-                Telefono = txtTelefono.Text.Trim(),
-                TamanoNombre = cboTamano.Text,
-                PrecioBaseTamano = Convert.ToInt32(cboTamano.SelectedValue),
-                MasaNombre = cboMasa.Text,
-                RecargoMasa = Convert.ToInt32(cboMasa.SelectedValue),
+                Tamano = tamano,
+                TipoMasa = masa,
                 QuesoExtra = chkQuesoExtra.Checked,
                 Pepperoni = chkPepperoni.Checked,
                 Champinones = chkChampinones.Checked,
                 Aceitunas = chkAceitunas.Checked,
                 Tocino = chkTocino.Checked,
-                EsDelivery = rdbDelivery.Checked,
-                AplicaConvenioEstudiante = chkConvenioEstudiante.Checked
+                Cantidad = (int)numCantidad.Value,
+                // Flags a nivel pedido que también se reflejan por línea para cálculos/visualización.
+                AplicaDescuento = chkDescuento.Checked,
+                EsDelivery = chkDelivery.Checked
+            };
+        }
+
+        // Construye el objeto PedidoPizza completo (cabecera + copia de ítems actuales).
+        // Este objeto es el que se envía al DAO para insertar/actualizar.
+        private PedidoPizza ConstruirPedidoDesdeFormulario()
+        {
+            var pedido = new PedidoPizza
+            {
+                IdPedido = idPedidoSeleccionado ?? 0,
+                FechaCreacion = dtpFecha.Value.Date + dtpHora.Value.TimeOfDay,
+                Cliente = txtCliente.Text.Trim(),
+                Telefono = txtTelefono.Text.Trim(),
+                EsDelivery = chkDelivery.Checked,
+                AplicaConvenioEstudiante = chkDescuento.Checked
+            };
+            pedido.Items.AddRange(items);
+            return pedido;
+        }
+
+        // Recalcula totales del pedido actual y refresca la grilla de detalle.
+        // Se invoca ante cambios de opciones (delivery/descuento) o modificaciones de ítems.
+        private void Recalcular()
+        {
+            // Sincroniza flags globales del pedido hacia cada línea para que el detalle muestre
+            // descuento/IVA/delivery coherentes con la selección actual.
+            foreach (var it in items)
+            {
+                it.AplicaDescuento = chkDescuento.Checked;
+                it.EsDelivery = chkDelivery.Checked;
+            }
+            items.ResetBindings();
+            FormatearGrillaDetalle();
+
+            PedidoPizza p = ConstruirPedidoDesdeFormulario();
+            lblSubtotalValor.Text = $"$ {p.CalcularSubtotalPizza():N0}";
+            lblIvaValor.Text = $"$ {p.CalcularMontoIva():N0}";
+            lblTotalValor.Text = $"$ {p.CalcularTotalPagar():N0}";
+        }
+
+        // Evento común para cambios en opciones que afectan totales (delivery/descuento).
+        private void chkOpcion_CheckedChanged(object? sender, EventArgs e)
+        {
+            Recalcular();
+        }
+
+        // ---------- Agregar / quitar líneas ----------
+        // Agrega una nueva línea al detalle o acumula cantidad si ya existe una configuración igual.
+        private void btnAgregar_Click(object? sender, EventArgs e)
+        {
+            ItemPedido nuevo = ConstruirItemDesdeFormulario();
+
+            // Busca si ya hay una línea con la misma configuración (tamaño, masa, ingredientes).
+            ItemPedido? existente = null;
+            foreach (var it in items)
+                if (it.MismaConfiguracion(nuevo)) { existente = it; break; }
+
+            if (existente != null)
+                existente.Cantidad += nuevo.Cantidad;   // Misma pizza: se incrementa cantidad.
+            else
+                items.Add(nuevo);
+
+            // Restablece selección de ingredientes/cantidad para facilitar la carga del siguiente ítem.
+            numCantidad.Value = 1;
+            chkQuesoExtra.Checked = false;
+            chkPepperoni.Checked = false;
+            chkChampinones.Checked = false;
+            chkAceitunas.Checked = false;
+            chkTocino.Checked = false;
+
+            Recalcular();
+        }
+
+        // ---------- Ver una línea del detalle en el formulario ----------
+        // Al hacer clic en una fila del detalle, carga sus valores en los controles para revisión.
+        private void dgvDetalleItem_CellClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            if (dgvDetalleItem.Rows[e.RowIndex].DataBoundItem is not ItemPedido it) return;
+
+            // Mapea valores de dominio a índices/estados de controles de la UI.
+            cboTamano.SelectedIndex = it.Tamano switch
+            {
+                "Personal" => 0,
+                "Familiar" => 2,
+                _ => 1
+            };
+            cboMasa.SelectedIndex = it.TipoMasa switch
+            {
+                "Delgada" => 1,
+                "Borde de Queso" => 2,
+                _ => 0
             };
 
-            PedidoDAO dao = new PedidoDAO();
+            chkQuesoExtra.Checked = it.QuesoExtra;
+            chkPepperoni.Checked = it.Pepperoni;
+            chkChampinones.Checked = it.Champinones;
+            chkAceitunas.Checked = it.Aceitunas;
+            chkTocino.Checked = it.Tocino;
+            numCantidad.Value = Math.Clamp(it.Cantidad, (int)numCantidad.Minimum, (int)numCantidad.Maximum);
+        }
 
-            if (formularioPedidoActualId == 0)
+        // Quita la línea seleccionada del detalle en memoria y recalcula totales.
+        private void btnQuitar_Click(object? sender, EventArgs e)
+        {
+            if (dgvDetalleItem.CurrentRow?.DataBoundItem is ItemPedido it)
             {
-                // Nuevo pedido
-                if (dao.InsertarPedido(pedido))
-                {
-                    MessageBox.Show("Pedido guardado exitosamente", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    CargarDataGridPedidos();
-                    LimpiarFormulario();
-                    formularioPedidoActualId = 0;
-                }
-                else
-                {
-                    MessageBox.Show("No se pudo guardar el pedido", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                items.Remove(it);
+                Recalcular();
             }
             else
             {
-                // Actualizar pedido existente
-                if (dao.ActualizarPedido(pedido))
+                MessageBox.Show("Seleccione un ítem del detalle para quitarlo.", "Atención",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        // ---------- Nuevo / limpiar ----------
+        // Botón "Nuevo": reinicia el formulario a estado inicial.
+        private void btnLimpiar_Click(object? sender, EventArgs e)
+        {
+            LimpiarCamposFormulario();
+        }
+
+        // Limpia datos de cliente, opciones, detalle y estado de edición.
+        private void LimpiarCamposFormulario()
+        {
+            txtCliente.Clear();
+            txtTelefono.Clear();
+            dtpFecha.Value = DateTime.Now;
+            dtpHora.Value = DateTime.Now;
+            cboTamano.SelectedIndex = 1;
+            cboMasa.SelectedIndex = 0;
+            numCantidad.Value = 1;
+            chkQuesoExtra.Checked = false;
+            chkPepperoni.Checked = false;
+            chkChampinones.Checked = false;
+            chkAceitunas.Checked = false;
+            chkTocino.Checked = false;
+            chkDelivery.Checked = false;
+            chkDescuento.Checked = false;
+
+            items.Clear();
+            idPedidoSeleccionado = null;
+            btnGuardar.Text = "Guardar pedido";
+            Recalcular();
+            txtCliente.Focus();
+        }
+
+        // ---------- Guardar (crear o actualizar) ----------
+        // Valida datos mínimos, decide si insertar o actualizar según idPedidoSeleccionado,
+        // persiste mediante DAO y refresca la UI.
+        private void btnGuardar_Click(object? sender, EventArgs e)
+        {
+            // Validaciones de entrada en la UI antes de intentar persistir.
+            if (string.IsNullOrWhiteSpace(txtCliente.Text))
+            {
+                MessageBox.Show("Ingrese el nombre del cliente.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCliente.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtTelefono.Text))
+            {
+                MessageBox.Show("Ingrese el teléfono del cliente.", "Validación",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtTelefono.Focus();
+                return;
+            }
+
+            if (items.Count == 0)
+            {
+                MessageBox.Show("Agregue al menos una pizza al pedido con el botón \"Agregar al pedido\".",
+                    "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // Construye el modelo de dominio a partir del estado actual del formulario.
+                PedidoPizza pedido = ConstruirPedidoDesdeFormulario();
+                bool resultado;
+                string mensaje;
+
+                // Flujo de persistencia: CREATE si es nuevo, UPDATE si se está editando uno existente.
+                if (idPedidoSeleccionado == null)
                 {
-                    MessageBox.Show("Pedido actualizado exitosamente", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    CargarDataGridPedidos();
-                    LimpiarFormulario();
-                    formularioPedidoActualId = 0;
+                    resultado = pedidoDao.InsertarPedido(pedido);
+                    mensaje = $"Pedido registrado exitosamente (N° {pedido.IdPedido}).";
                 }
                 else
                 {
-                    MessageBox.Show("No se pudo actualizar el pedido", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    resultado = pedidoDao.ActualizarPedido(pedido);
+                    mensaje = "Pedido actualizado correctamente.";
+                }
+
+                if (resultado)
+                {
+                    MessageBox.Show(mensaje, "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LimpiarCamposFormulario();
+                    CargarGrillaPedidos();
+                }
+                else
+                {
+                    MessageBox.Show("No se pudo guardar el pedido.", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al guardar el pedido: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
-        catch (Exception ex)
+
+        // ---------- Eliminar ----------
+        // Elimina el pedido seleccionado en la grilla inferior previa confirmación del usuario.
+        private void btnEliminar_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (idPedidoSeleccionado == null)
+            {
+                MessageBox.Show("Seleccione un pedido de la grilla inferior para eliminar.", "Atención",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show("¿Está seguro de eliminar este pedido?", "Confirmar",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            try
+            {
+                if (pedidoDao.EliminarPedido(idPedidoSeleccionado.Value))
+                {
+                    MessageBox.Show("Pedido eliminado.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LimpiarCamposFormulario();
+                    CargarGrillaPedidos();
+                }
+                else
+                {
+                    MessageBox.Show("No se pudo eliminar el pedido.", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al eliminar: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // ---------- Seleccionar un pedido guardado ----------
+        // Carga un pedido desde la base de datos al formulario para visualizarlo o editarlo.
+        private void dgvPedidos_CellClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            try
+            {
+                int id = Convert.ToInt32(dgvPedidos.Rows[e.RowIndex].Cells["IdPedido"].Value);
+                PedidoPizza? p = pedidoDao.ObtenerPedidoPorId(id);
+                if (p == null) return;
+
+                // Marca el pedido como seleccionado para habilitar modo edición/eliminación.
+                idPedidoSeleccionado = id;
+
+                // Carga datos de cabecera en controles.
+                txtCliente.Text = p.Cliente;
+                txtTelefono.Text = p.Telefono == "Sin Teléfono" ? string.Empty : p.Telefono;
+                dtpFecha.Value = p.FechaCreacion;
+                dtpHora.Value = p.FechaCreacion;
+
+                // Carga detalle del pedido en la lista enlazada a la grilla.
+                items.Clear();
+                foreach (var it in p.Items) items.Add(it);
+
+                // Actualiza opciones generales; los handlers disparan Recalcular() para refrescar totales.
+                chkDelivery.Checked = p.EsDelivery;
+                chkDescuento.Checked = p.AplicaConvenioEstudiante;
+
+                btnGuardar.Text = "Actualizar pedido";
+                Recalcular();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar el pedido: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // Cierra la aplicación.
+        private void btnSalir_Click(object? sender, EventArgs e)
+        {
+            Application.Exit();
         }
     }
-
-    // Variable para almacenar el ID del pedido actual (0 = nuevo, >0 = edición)
-    private int formularioPedidoActualId = 0;
 }

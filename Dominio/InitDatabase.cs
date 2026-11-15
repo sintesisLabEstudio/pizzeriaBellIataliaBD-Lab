@@ -1,122 +1,105 @@
-using System;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace PizzeriaBellaItalia.Dominio;
 
 /// <summary>
-/// Clase para inicializar la base de datos pizzeriaBD
-/// Crea la base de datos y la tabla Pedidos si no existen
+/// Inicializa la base de datos y las tablas requeridas por la aplicación.
+/// Flujo:
+/// 1) Lee la cadena de conexión configurada.
+/// 2) Se conecta a "master" para crear la base si no existe.
+/// 3) Se conecta a la base de la app para crear tablas/índices faltantes.
+/// Esto permite que la app pueda levantar un esquema mínimo en entornos nuevos.
 /// </summary>
 public static class InitDatabase
 {
-    /// <summary>
-    /// Inicializa la base de datos creando base de datos y tabla si no existen
-    /// </summary>
     public static void Inicializar()
     {
-        try
+        // Obtiene la configuración actual y extrae el nombre de la base a inicializar.
+        var builder = new SqlConnectionStringBuilder(ConexionBD.ObtenerCadenaConexion());
+        var dbName = string.IsNullOrWhiteSpace(builder.InitialCatalog) ? "pizzeriaBD" : builder.InitialCatalog;
+
+        // Para crear la base (si no existe) hay que conectarse a una base del sistema, típicamente "master".
+        var masterBuilder = new SqlConnectionStringBuilder(builder.ConnectionString)
         {
-            // Primero: Crear la base de datos si no existe
-            CrearBaseDatos();
+            InitialCatalog = "master"
+        };
 
-            // Segundo: Crear la tabla Pedidos si no existe
-            CrearTablaPedidos();
-
-            Console.WriteLine("✅ Base de datos inicializada correctamente");
-        }
-        catch (Exception ex)
+        // Paso 1: crear la base de datos si aún no existe.
+        using (var master = new SqlConnection(masterBuilder.ConnectionString))
         {
-            Console.WriteLine($"❌ Error al inicializar la base de datos: {ex.Message}");
+            master.Open();
+            using var cmd = master.CreateCommand();
+
+            // Se sanitiza mínimamente el nombre embebido y se usa QUOTENAME para reducir riesgo de inyección
+            // en el identificador de base de datos dentro de SQL dinámico.
+            cmd.CommandText = $@"
+IF DB_ID(N'{dbName.Replace("'", "''")}') IS NULL
+BEGIN
+    DECLARE @sql NVARCHAR(MAX) = N'CREATE DATABASE ' + QUOTENAME(N'{dbName.Replace("]", "]]")}');
+    EXEC(@sql);
+END";
+            cmd.ExecuteNonQuery();
         }
-    }
 
-    /// <summary>
-    /// Crea la base de datos PizzeriaDB si no existe
-    /// </summary>
-    private static void CrearBaseDatos()
-    {
-        string cadenaConexionMaster = @"Server=(LocalDB)\MSSQLLocalDB;Database=master;Integrated Security=True;Connect Timeout=30;Encrypt=False";
+        // Paso 2: crear tablas e índices requeridos por el DAO si no están presentes.
+        // La condición principal verifica la tabla de detalle para aplicar el esquema esperado.
+        using var con = ConexionBD.ObtenerConexion();
+        using var create = con.CreateCommand();
+        create.CommandText = @"
+IF OBJECT_ID(N'dbo.DetallePedidos', N'U') IS NULL
+BEGIN
+    -- Tabla de clientes: información básica asociada a los pedidos.
+    IF OBJECT_ID(N'dbo.Clientes', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.Clientes (
+            IdCliente INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Clientes PRIMARY KEY,
+            Nombre NVARCHAR(100) NOT NULL,
+            Telefono NVARCHAR(30) NOT NULL
+        );
+    END
 
-        try
-        {
-            using (SqlConnection conexion = new SqlConnection(cadenaConexionMaster))
-            {
-                conexion.Open();
+    -- Tabla de cabecera de pedidos: totales, fecha y flags del pedido.
+    IF OBJECT_ID(N'dbo.Pedidos', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.Pedidos (
+            IdPedido INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Pedidos PRIMARY KEY,
+            IdCliente INT NOT NULL,
+            FechaHora DATETIME2(0) NOT NULL CONSTRAINT DF_Pedidos_FechaHora DEFAULT (SYSDATETIME()),
+            EsDelivery BIT NOT NULL CONSTRAINT DF_Pedidos_EsDelivery DEFAULT (0),
+            AplicaConvenioEstudiante BIT NOT NULL CONSTRAINT DF_Pedidos_Convenio DEFAULT (0),
+            Subtotal DECIMAL(18,2) NOT NULL CONSTRAINT DF_Pedidos_Subtotal DEFAULT (0),
+            Descuento DECIMAL(18,2) NOT NULL CONSTRAINT DF_Pedidos_Descuento DEFAULT (0),
+            DeliveryCosto DECIMAL(18,2) NOT NULL CONSTRAINT DF_Pedidos_DeliveryCosto DEFAULT (0),
+            Iva DECIMAL(18,2) NOT NULL CONSTRAINT DF_Pedidos_Iva DEFAULT (0),
+            Total DECIMAL(18,2) NOT NULL CONSTRAINT DF_Pedidos_Total DEFAULT (0),
+            CONSTRAINT FK_Pedidos_Clientes FOREIGN KEY (IdCliente) REFERENCES dbo.Clientes(IdCliente)
+        );
+    END
 
-                string sqlCrearBD = @"
-                    IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'PizzeriaDB')
-                    BEGIN
-                        CREATE DATABASE PizzeriaDB;
-                        PRINT 'Base de datos PizzeriaDB creada exitosamente';
-                    END";
+    -- Tabla de detalle: cada línea/pizza del pedido (configuración, cantidad y montos).
+    CREATE TABLE dbo.DetallePedidos (
+        IdDetalle INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DetallePedidos PRIMARY KEY,
+        IdPedido INT NOT NULL,
+        Tamano NVARCHAR(50) NOT NULL,
+        TipoMasa NVARCHAR(50) NOT NULL,
+        QuesoExtra BIT NOT NULL CONSTRAINT DF_Detalle_QuesoExtra DEFAULT (0),
+        Pepperoni BIT NOT NULL CONSTRAINT DF_Detalle_Pepperoni DEFAULT (0),
+        Champinones BIT NOT NULL CONSTRAINT DF_Detalle_Champinones DEFAULT (0),
+        Aceitunas BIT NOT NULL CONSTRAINT DF_Detalle_Aceitunas DEFAULT (0),
+        Tocino BIT NOT NULL CONSTRAINT DF_Detalle_Tocino DEFAULT (0),
+        Cantidad INT NOT NULL CONSTRAINT DF_Detalle_Cantidad DEFAULT (1),
+        PrecioUnitario DECIMAL(18,2) NOT NULL CONSTRAINT DF_Detalle_PrecioUnitario DEFAULT (0),
+        SubtotalItem DECIMAL(18,2) NOT NULL CONSTRAINT DF_Detalle_SubtotalItem DEFAULT (0),
+        Resumen NVARCHAR(300) NOT NULL CONSTRAINT DF_Detalle_Resumen DEFAULT (N''),
+        CONSTRAINT FK_DetallePedidos_Pedidos FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido) ON DELETE CASCADE
+    );
 
-                using (SqlCommand cmd = new SqlCommand(sqlCrearBD, conexion))
-                {
-                    cmd.ExecuteNonQuery();
-                    Console.WriteLine("✅ Base de datos verificada/creada");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error al crear la base de datos: {ex.Message}", ex);
-        }
-    }
-
-    /// <summary>
-    /// Crea la tabla Pedidos si no existe
-    /// </summary>
-    private static void CrearTablaPedidos()
-    {
-        string cadenaConexion = @"Server=(LocalDB)\MSSQLLocalDB;Database=PizzeriaDB;Integrated Security=True;Connect Timeout=30;Encrypt=False";
-
-        try
-        {
-            using (SqlConnection conexion = new SqlConnection(cadenaConexion))
-            {
-                conexion.Open();
-
-                string sqlCrearTabla = @"
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Pedidos')
-                    BEGIN
-                        CREATE TABLE Pedidos
-                        (
-                            IdPedido INT IDENTITY(1,1) PRIMARY KEY,
-                            Cliente NVARCHAR(100) NOT NULL,
-                            Telefono NVARCHAR(30) NOT NULL,
-                            TamanoNombre NVARCHAR(50) NOT NULL,
-                            PrecioBaseTamano INT NOT NULL,
-                            MasaNombre NVARCHAR(50) NOT NULL,
-                            RecargoMasa INT NOT NULL,
-                            QuesoExtra BIT NOT NULL DEFAULT 0,
-                            Pepperoni BIT NOT NULL DEFAULT 0,
-                            Champinones BIT NOT NULL DEFAULT 0,
-                            Aceitunas BIT NOT NULL DEFAULT 0,
-                            Tocino BIT NOT NULL DEFAULT 0,
-                            EsDelivery BIT NOT NULL DEFAULT 0,
-                            AplicaConvenioEstudiante BIT NOT NULL DEFAULT 0,
-                            CostoIngredientes INT NOT NULL DEFAULT 0,
-                            SubtotalPizza INT NOT NULL DEFAULT 0,
-                            MontoDescuento INT DEFAULT 0,
-                            CostoDelivery INT DEFAULT 0,
-                            NetoAfecto INT NOT NULL DEFAULT 0,
-                            MontoIva INT NOT NULL DEFAULT 0,
-                            TotalPagar INT NOT NULL DEFAULT 0,
-                            FechaCreacion DATETIME DEFAULT GETDATE()
-                        );
-                        PRINT 'Tabla Pedidos creada exitosamente';
-                    END";
-
-                using (SqlCommand cmd = new SqlCommand(sqlCrearTabla, conexion))
-                {
-                    cmd.ExecuteNonQuery();
-                    Console.WriteLine("✅ Tabla Pedidos verificada/creada");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error al crear la tabla Pedidos: {ex.Message}", ex);
-        }
+    -- Índices para mejorar búsquedas por claves foráneas / consultas frecuentes.
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Pedidos_IdCliente' AND object_id = OBJECT_ID('dbo.Pedidos'))
+        CREATE INDEX IX_Pedidos_IdCliente ON dbo.Pedidos(IdCliente);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_DetallePedidos_IdPedido' AND object_id = OBJECT_ID('dbo.DetallePedidos'))
+        CREATE INDEX IX_DetallePedidos_IdPedido ON dbo.DetallePedidos(IdPedido);
+END";
+        create.ExecuteNonQuery();
     }
 }

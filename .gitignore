@@ -265,6 +265,10 @@ ServiceFabricBackup/
 *.mdf
 *.ldf
 *.ndf
+# Permitir archivos de base de datos del proyecto en BDpizzeria para portabilidad
+!BDpizzeria/*.mdf
+!BDpizzeria/*.ldf
+!BDpizzeria/*.ndf
 
 # Business Intelligence projects
 *.rdl.data
